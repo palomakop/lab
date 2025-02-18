@@ -16,4 +16,7 @@ browse with caution. things might be broken, half-baked, ugly, or depend on expe
 
 **&gt;&gt;** read my <a href="https://palomakop.tv/recurse" target="_blank">recurse center log</a>
 
+**&gt;&gt;** view all the source code on <a href="https://github.com/palomakop/lab" target="_blank">the repo</a>
+
+
 **&gt;&gt;** continue to browse the lab at your own risk... (hmm, there is not much to see yet, come back later)
