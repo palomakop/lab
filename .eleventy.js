@@ -6,5 +6,6 @@ export default function(eleventyConfig) {
   eleventyConfig.setOutputDirectory("_site");
 
   eleventyConfig.addPassthroughCopy("./src/css");
+  eleventyConfig.addPassthroughCopy("./src/shaders");
 
 };

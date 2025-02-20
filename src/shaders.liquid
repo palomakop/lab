@@ -1,0 +1,40 @@
+---
+title: shaders
+description: things made with javascript and glsl and canvas
+layout: default
+glslCanvas: true
+---
+
+<a href="/">&lt;- return to the lab</a>
+
+<h1>shaders</h1>
+
+<p>fragment shaders rendered into a <code>&lt;canvas></code> using patricio gonzalez's <a href="https://github.com/patriciogonzalezvivo/glslCanvas" target="_blank" rel="noopener">glslCanvas</a></p>
+
+<h2>spiral</h2>
+
+<canvas class="glslCanvas" data-fragment-url="/shaders/spiral.frag" width="400" height="400" style="max-width:100%;aspect-ratio:1;"></canvas>
+
+<details>
+<summary>code</summary>
+<code>
+<pre>
+{% render './src/shaders/spiral.frag' %}
+</pre>
+</code>
+</details>
+
+<h2>oscillator</h2>
+
+<p>this one has mouse interaction (mouseX controls frequency, mouseY controls phase and wiggliness)</p>
+
+<canvas class="glslCanvas" data-fragment-url="/shaders/oscillator.frag" width="720" height="405" style="max-width:100%;aspect-ratio:16/9;"></canvas>
+
+<details>
+<summary>code</summary>
+<code>
+<pre>
+{% render './src/shaders/oscillator.frag' %}
+</pre>
+</code>
+</details>
