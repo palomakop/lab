@@ -13,6 +13,7 @@ html {
   -webkit-text-size-adjust:var(--text-size-adjust);
   -moz-text-size-adjust:var(--text-size-adjust);
   scroll-behavior:smooth;
+  color-scheme: light dark;
 }
 
 body {
