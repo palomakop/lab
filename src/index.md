@@ -10,15 +10,23 @@ layout: default
 
 browse with caution. things might be broken, half-baked, ugly, or depend on experimental browser features. this is where ideas can come out to play, without pressure to be perfect or polished.
 
-## you find yourself in a small vestibule with concrete walls.
+<div class="scene" id="atrium">
+
+## you find yourself in an atrium with concrete walls.
+
+**&gt;&gt;** there is a light switch on the wall near the entrance. it's currently switched <span class="display-dark">off</span><span class="display-light">on</span>. <span id="on-switch"><a href="javascript:toggleColorScheme();">turn on the lights</a></span><span id="off-switch"><a href="javascript:toggleColorScheme();">turn off the lights</a></span>
 
 **&gt;&gt;** a swirling portal behind you leads to the relative safety of the <a href="https://palomakop.tv" target="_blank">main site</a>
 
 **&gt;&gt;** you see a desk with a scroll of paper lying on it. the top of the page reads <a href="https://palomakop.tv/recurse" target="_blank">recurse center log</a>
 
-**&gt;&gt;** a pair of x-ray goggles is sitting on the desk. put them on to <a href="https://github.com/palomakop/lab" target="_blank">view the source code on the repo</a>
+**&gt;&gt;** a pair of x-ray goggles is sitting on the desk. put them on to view the source code on <a href="https://github.com/palomakop/lab" target="_blank">the repo</a>
 
-**&gt;&gt;** continue to explore the lab at your own risk...
+**&gt;&gt;** a large metal door stands before you. open it to [enter the lab](#hallway) at your own risk...
+
+</div>
+
+...
 
 ...
 
@@ -26,6 +34,28 @@ browse with caution. things might be broken, half-baked, ugly, or depend on expe
 
 ...
 
-## you see a door marked "shaders."
+...
 
-**&gt;&gt;** [open it!](/shaders)
+...
+
+...
+
+...
+
+...
+
+...
+
+...
+
+...
+
+<div class="scene" id="hallway">
+
+## you enter a long, featureless hallway lined with doors.
+
+**&gt;&gt;** open the door marked [shaders](/shaders)
+
+**&gt;&gt;** go back to the [atrium](/#atrium)
+
+</div>

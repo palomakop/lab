@@ -5,6 +5,44 @@
   font-display:swap;
 }
 
+/* :root {
+  color-scheme: light dark;
+} */
+
+:root {
+  --bg-color:#ffffff;
+  --fg-color:#000000;
+  --link-color:blue;
+  --visited-link-color:purple;
+}
+
+.display-light {
+  display:inline;
+}
+.display-dark {
+  display:none;
+}
+
+#on-switch, #off-switch {
+  display:none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-color:#212121;
+    --fg-color:#ffffff;
+    --link-color:rgb(124, 124, 255);
+    --visited-link-color:rgb(200, 126, 200);
+  }
+  .display-light {
+    display:none;
+  }
+  .display-dark {
+    display:inline;
+  }
+}
+
+
 html {
   height:100%;
   padding:env(safe-area-inset); /* for iphone notch */
@@ -13,7 +51,6 @@ html {
   -webkit-text-size-adjust:var(--text-size-adjust);
   -moz-text-size-adjust:var(--text-size-adjust);
   scroll-behavior:smooth;
-  color-scheme: light dark;
 }
 
 body {
@@ -21,16 +58,53 @@ body {
   line-height:1.6;
   overflow-wrap:break-word;
   word-wrap:break-word;
+  color:var(--fg-color);
+  background-color:var(--bg-color);
 }
 
 p {
   max-width:70ch;
 }
 
-footer {
-  margin:4em 0 1em;
-}
-
 footer small {
   font-style:italic;
+  padding:4rem 0 2rem;
+}
+
+a {
+  outline:1.5px solid;
+  outline-offset:-1.5px;
+  border-radius:0.4em;
+  padding:0.1em 0.4ch;
+  text-decoration:none;
+  color:var(--link-color);
+  white-space:nowrap;
+}
+
+a:visited {
+  color:var(--visited-link-color);
+}
+
+a:hover {
+  color:#ffffff;
+  background:linear-gradient(to right, red, blue, red, blue, red, blue, red, blue, red, blue, red, blue, red, blue, red, blue);
+  animation: gradient 5s linear infinite;
+  outline:none;
+  background-size:500% 100%;
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 50% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
+.scene {
+  min-height:calc(100vh - 4rem);
 }
