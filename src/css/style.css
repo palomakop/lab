@@ -9,23 +9,29 @@
   color-scheme: light dark;
 } */
 
-:root {
-  --bg-color:#ffffff;
-  --fg-color:#000000;
-  --link-color:blue;
-  --visited-link-color:purple;
-}
-
-.display-light {
-  display:inline;
-}
-.display-dark {
-  display:none;
-}
-
 #on-switch, #off-switch {
   display:none;
 }
+
+/* LIGHT MODE MEDIA RULE */
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg-color:#ffffff;
+    --fg-color:#000000;
+    --link-color:blue;
+    --visited-link-color:purple;
+  }
+
+  .display-light {
+    display:inline;
+  }
+  .display-dark {
+    display:none;
+  }
+}
+
+/* DARK MODE MEDIA RULE */
 
 @media (prefers-color-scheme: dark) {
   :root {
@@ -41,6 +47,39 @@
     display:inline;
   }
 }
+
+/* LIGHT MODE CLASS RULES */
+
+.light-mode {
+  --bg-color:#ffffff;
+  --fg-color:#000000;
+  --link-color:blue;
+  --visited-link-color:purple;
+}
+
+.light-mode .display-light {
+  display:inline;
+}
+.light-mode .display-dark {
+  display:none;
+}
+
+/* DARK MODE CLASS RULES */
+
+.dark-mode {
+  --bg-color:#212121;
+  --fg-color:#ffffff;
+  --link-color:rgb(124, 124, 255);
+  --visited-link-color:rgb(200, 126, 200);
+}
+
+.dark-mode .display-light {
+  display:none;
+}
+.dark-mode .display-dark {
+  display:inline;
+}
+
 
 
 html {
