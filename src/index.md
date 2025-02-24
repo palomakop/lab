@@ -4,7 +4,7 @@ description: a space for web-based experiments and half-baked ideas
 layout: default
 ---
 
-# ⚗️ welcome to my <span class="fade-text-a">laboratory</span><span class="fade-text-b">labyrinth</span>
+# ⚗️ welcome to my <div class="word">lab<div class="fade-text-container" aria-hidden="true"><span class="fade-text-a">oratory</span><span class="fade-text-b">yrinth</span></div></div>
 
 **this is the wild frontier section of my website, where experiments happen.**
 

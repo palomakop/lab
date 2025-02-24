@@ -5,10 +5,6 @@
   font-display:swap;
 }
 
-/* :root {
-  color-scheme: light dark;
-} */
-
 #on-switch, #off-switch {
   display:none;
 }
@@ -80,7 +76,7 @@
   display:inline;
 }
 
-
+/* GENERAL RULES */
 
 html {
   height:100%;
@@ -146,4 +142,78 @@ a:hover {
 
 .scene {
   min-height:calc(100vh - 4rem);
+}
+
+/* FADING TEXT ANIMATION */
+
+.fade-text-a, .fade-text-b {
+  position:absolute;
+  display:inline;
+}
+
+.fade-text-container {
+  display:inline;
+  opacity:0.3;
+}
+
+.fade-text-a {
+  animation: fadeA 10s ease infinite;
+}
+
+.fade-text-b {
+  animation: fadeB 10s ease infinite;
+}
+
+@keyframes fadeA {
+  0% {
+    opacity:1;
+  }
+  40% {
+    opacity:1;
+  }
+  50% {
+    opacity:0;
+  }
+  90% {
+    opacity:0;
+  }
+  100% {
+    opacity:1;
+  }
+}
+
+@keyframes fadeB {
+  0% {
+    opacity:0;
+  }
+  40% {
+    opacity:0;
+  }
+  50% {
+    opacity:1;
+  }
+  90% {
+    opacity:1;
+  }
+  100% {
+    opacity:0;
+  }
+}
+
+.word {
+  display:inline-block;
+  width:10ch;
+}
+
+a[href^="http"] {
+  padding-right:0.5ch;
+}
+
+a[href^="http"]:after {
+  content:'➚';
+  margin-left:0.3ch;
+}
+
+#atrium {
+  margin-top:3em;
 }
