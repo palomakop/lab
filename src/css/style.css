@@ -101,9 +101,10 @@ p {
   max-width:70ch;
 }
 
-footer small {
+footer {
+  display:block;
   font-style:italic;
-  padding:4rem 0 2rem;
+  margin:2rem 0;
 }
 
 a {
@@ -141,7 +142,7 @@ a:hover {
 }
 
 .scene {
-  min-height:calc(100vh - 4rem);
+  min-height:calc(100vh - 5rem);
 }
 
 /* FADING TEXT ANIMATION */
