@@ -14,6 +14,17 @@ date: git Last Modified
 
   <link href="/css/style.css" rel="stylesheet">
 
+  {% if fullscreen %}
+  <style type="text/css">
+    body {
+      margin:0;
+    }
+    main {
+      line-height:0;
+    }
+  </style>
+  {% endif %}
+
   {% if glslCanvas %}
   <script type="text/javascript" src="https://rawgit.com/patriciogonzalezvivo/glslCanvas/master/dist/GlslCanvas.js"></script>
   {% endif %}
@@ -24,9 +35,11 @@ date: git Last Modified
 
 {{content}}
 
+{% unless fullscreen %}
 <footer>
 <small>Page last modified: {{page.date | date: "%B %e, %Y"}}</small>
 </footer>
+{% endunless %}
 
 <script type="text/javascript" src="/js/theme-toggle.js"></script>
 

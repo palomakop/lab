@@ -218,3 +218,7 @@ a[href^="http"]:after {
 #atrium {
   margin-top:3em;
 }
+
+details {
+  margin-bottom:2em;
+}

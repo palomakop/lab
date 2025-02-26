@@ -56,6 +56,8 @@ browse with caution. things might be broken, half-baked, ugly, or depend on expe
 
 **&gt;&gt;** open the door marked [shaders](/shaders)
 
+**&gt;&gt;** open the door marked [p5.js](/p5)
+
 **&gt;&gt;** go back to the [atrium](/#atrium)
 
 </div>
