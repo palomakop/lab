@@ -8,6 +8,32 @@ layout: default
 
 <h1>p5.js sketches</h1>
 
+<h2>conway</h2>
+
+<p>made in collaboration with irena</p>
+
+<script type="text/javascript">
+window.onload = function() {
+    document.getElementById('iframeRefresher').addEventListener('click', function() {
+        var ifr = document.getElementsByName('conway')[0];
+        ifr.src = ifr.src;
+    });
+}
+</script>
+
+<p>on desktop, you can press any key to pause, and click squares to toggle their life. you can also <a id="iframeRefresher" style="cursor:pointer;">refresh</a> to randomize the grid again.</p>
+
+<iframe name="conway" src="/p5/conway" width="400" height="400" style="max-width:100%;aspect-ratio:1;" frameBorder="0"></iframe>
+
+<details>
+<summary>code</summary>
+<code>
+<pre>
+{% render './src/p5-sketches/conway.js' %}
+</pre>
+</code>
+</details>
+
 <h2>bubbles</h2>
 
 <p>made in collaboration with colleen</p>
