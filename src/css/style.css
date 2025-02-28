@@ -97,10 +97,6 @@ body {
   background-color:var(--bg-color);
 }
 
-div {
-  color:var(--fg-color);
-}
-
 p {
   max-width:70ch;
 }
@@ -228,8 +224,10 @@ details {
 }
 
 .overlay {
+  color:var(--fg-color);
   position:fixed;
   top:0;
-  left:1.5ch;
+  left:0;
+  padding:0 1.5ch;
   z-index:1000;
 }
