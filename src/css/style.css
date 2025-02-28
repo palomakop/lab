@@ -97,6 +97,10 @@ body {
   background-color:var(--bg-color);
 }
 
+div {
+  color:var(--fg-color);
+}
+
 p {
   max-width:70ch;
 }
