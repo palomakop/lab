@@ -222,3 +222,10 @@ a[href^="http"]:after {
 details {
   margin-bottom:2em;
 }
+
+.overlay {
+  position:fixed;
+  top:0;
+  left:1.5ch;
+  z-index:1000;
+}

@@ -29,9 +29,20 @@ date: git Last Modified
   <script type="text/javascript" src="https://rawgit.com/patriciogonzalezvivo/glslCanvas/master/dist/GlslCanvas.js"></script>
   {% endif %}
 
+  {% if threeJs %}
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "/js/three.module.js",
+        "three/addons/": "/js/jsm/"
+      }
+    }
+  </script>
+  {% endif %}
+
 </head>
 
-<body class="light-mode">
+<body>
 
 {{content}}
 

@@ -41,13 +41,21 @@ function applyPreferredColorScheme(scheme) {
   if (scheme === "dark") {
     bodyElement.classList.add("dark-mode");
     bodyElement.classList.remove("light-mode");
-    document.getElementById("on-switch").style.display = 'inline';
-    document.getElementById("off-switch").style.display = 'none';
+    if (document.getElementById("on-switch")) {
+      document.getElementById("on-switch").style.display = 'inline';
+    }
+    if (document.getElementById("off-switch")) {
+      document.getElementById("off-switch").style.display = 'none';
+    }
   } else if (scheme === "light") {
     bodyElement.classList.add("light-mode");
     bodyElement.classList.remove("dark-mode");
-    document.getElementById("off-switch").style.display = 'inline';
-    document.getElementById("on-switch").style.display = 'none';
+    if (document.getElementById("on-switch")) {
+      document.getElementById("on-switch").style.display = 'none';
+    }
+    if (document.getElementById("off-switch")) {
+      document.getElementById("off-switch").style.display = 'inline';
+    }
   }
 
 }
