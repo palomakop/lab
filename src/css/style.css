@@ -110,11 +110,12 @@ footer {
 a {
   outline:1.5px solid;
   outline-offset:-1.5px;
-  border-radius:0.4em;
+  border-radius:0.4rem;
   padding:0.1em 0.4ch;
   text-decoration:none;
   color:var(--link-color);
   white-space:nowrap;
+  box-sizing:border-box;
 }
 
 a:visited {
@@ -230,4 +231,17 @@ details {
   left:0;
   padding:0 1.5ch;
   z-index:1000;
+}
+
+#hallway-illustration {
+  max-width:50vh;
+  padding-top:0.5em;
+}
+
+#labyrinth {
+  max-width:5em;
+}
+
+#alembic {
+  max-width:10em;
 }

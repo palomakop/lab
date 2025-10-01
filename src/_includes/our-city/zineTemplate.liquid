@@ -1,0 +1,94 @@
+<!DOCTYPE HTML>
+
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="description" content="{{description}}">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+
+  <title>{{title}}</title>
+
+  <style type="text/css">
+
+    body {
+      background-color:#e7ddce;
+      color:#855c4c;
+      font-family:"RuniconCypher";
+      margin:0;
+      text-align:center;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      min-height:100vh;
+    }
+
+    @font-face {
+      font-family:'RuniconCypher';
+      src:url('https://s3.us-east-1.amazonaws.com/palomakop.tv/fonts/runicon_cypher.woff2') format('woff2'), url('https://s3.us-east-1.amazonaws.com/palomakop.tv/fonts/runicon_cypher.woff') format('woff');
+      font-display:block;
+    }
+
+    #illustration {
+      border:solid 0.15rem;
+      border-radius:0.09rem;
+    }
+
+    #labyrinth {
+      width:15vw;
+      max-width:5em;
+      position:fixed;
+      left:1rem;
+      bottom:1rem;
+    }
+
+    a {
+      opacity:0.5;
+      text-decoration:none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    a:hover {
+      color:red;
+      opacity:0.7;
+    }
+
+    .page {
+      width:45ch;
+      max-width:100%;
+      height:fit-content;
+      padding:2em;
+    }
+
+    h1 {
+      font-size:4rem;
+      margin-top:0;
+    }
+
+    p {
+      font-size:2.2rem;
+      line-height:1.2em;
+    }
+
+    #right-arrow, #left-arrow, #curved-arrow {
+      display:inline;
+      height:3rem;
+      padding:0.5rem;
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+  <div class="page">
+
+    {{content}}
+
+  </div>
+
+
+</body>
+
+</html>

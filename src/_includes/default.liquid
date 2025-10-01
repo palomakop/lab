@@ -25,6 +25,16 @@ date: git Last Modified
   </style>
   {% endif %}
 
+  {% if runicon %}
+  <style type="text/css">
+    @font-face {
+      font-family:'RuniconCypher';
+      src:url('https://s3.us-east-1.amazonaws.com/palomakop.tv/fonts/runicon_cypher.woff2') format('woff2'), url('https://s3.us-east-1.amazonaws.com/palomakop.tv/fonts/runicon_cypher.woff') format('woff');
+      font-display:block;
+    }
+  </style>
+  {% endif %}
+
   {% if glslCanvas %}
   <script type="text/javascript" src="https://rawgit.com/patriciogonzalezvivo/glslCanvas/master/dist/GlslCanvas.js"></script>
   {% endif %}
