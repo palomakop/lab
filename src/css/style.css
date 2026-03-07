@@ -142,10 +142,6 @@ a:hover {
   }
 }
 
-.scene {
-  min-height:calc(100vh - 5rem);
-}
-
 /* FADING TEXT ANIMATION */
 
 .fade-text-a, .fade-text-b {
