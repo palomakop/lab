@@ -19,4 +19,4 @@ runicon: true
 
 **&gt;&gt;** open the door marked [ideas](/ideas)
 
-**&gt;&gt;** turn around and go back to the [atrium](/atrium)
+**&gt;&gt;** go back to the [atrium](/atrium)

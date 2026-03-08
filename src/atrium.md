@@ -10,4 +10,11 @@ layout: default
 **&gt;&gt;** a large metal door stands before you, engraved with the winding contours of a labyrinth. open it to [enter the lab](/hallway) at your own risk...
 {% include "labyrinth.svg" %}
 
-**&gt;&gt;** behind you, the staircase ascends back towards the outdoors. [climb back up](/) if you like.
+**&gt;&gt;** <span id="staircase-line">behind you, a staircase ascends towards the outdoors. <a href="/">climb up</a> if you like.</span>
+
+<script>
+if (localStorage.getItem('lastVisit')) {
+  document.getElementById('staircase-line').innerHTML =
+    'behind you, the staircase ascends back towards the outdoors. <a href="/">climb back up</a> if you like.';
+}
+</script>

@@ -1,0 +1,242 @@
+---
+title: ideas
+layout: default
+---
+
+<p>
+  <a href="/hallway">&lt; return to the hallway</a>
+</p>
+
+<p>
+  you enter a small room with a table in the center. on it sits a stack of <span id="card-count"></span> cards. a metal plaque beside them reads: <i>ideas</i>.
+</p>
+
+<main id="card-draw-page">
+
+  <!-- Draw button: overlaid, fades out after first pull -->
+  <div id="draw-btn-wrap">
+    <a id="draw-btn" href="#">draw a random card</a>
+  </div>
+
+  <div id="stage">
+
+    <!-- Sparkle spinner: visible during load -->
+    <div id="sparkle-wrap" aria-hidden="true">
+      <!-- rounded 4-pointed star: cubic bezier lobes -->
+      <svg id="sparkle" viewBox="0 0 480 480" xmlns="http://www.w3.org/2000/svg">
+        <path d="M480 240A240 240 0 0 1 240 0 240 240 0 0 1 0 240a240 240 0 0 1 240 240 240 240 0 0 1 240-240Z"/>
+      </svg>
+    </div>
+
+    <!-- Card slot: always in DOM for layout, invisible until drawn -->
+    <div id="card-slot">
+      <div id="card-scene">
+        <div id="card-flip">
+          <div id="card-back" class="card-face"></div>
+          <div id="card-front" class="card-face">
+            <img id="card-img" src="" alt="">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Metadata: invisible until first draw -->
+    <div id="card-meta">
+      <div id="channel-tags" class="channels"></div>
+      <a id="arena-link" href="#" target="_blank" rel="noopener">view this card on are.na</a>
+      <a id="again-btn" href="#">shuffle and draw another card</a>
+    </div>
+
+  </div>
+
+</main>
+
+<script>
+  const INDEX_PATH = '/ideas/card_images/card_index.json';
+
+  let cards = [];
+  let busy = false;
+  let hasDrawn = false;
+
+  const drawBtnWrap = document.getElementById('draw-btn-wrap');
+  const drawBtn     = document.getElementById('draw-btn');
+  const sparkleWrap = document.getElementById('sparkle-wrap');
+  const cardSlot    = document.getElementById('card-slot');
+  const flip        = document.getElementById('card-flip');
+  const cardImg     = document.getElementById('card-img');
+  const meta        = document.getElementById('card-meta');
+  const channelDiv  = document.getElementById('channel-tags');
+  const arenaLink   = document.getElementById('arena-link');
+  const againBtn    = document.getElementById('again-btn');
+  const cardCount   = document.getElementById('card-count');
+
+  // --- Load index ---
+  async function loadIndex() {
+    const res = await fetch(INDEX_PATH);
+    cards = await res.json();
+    cardCount.textContent = cards.length;
+  }
+
+  function randomIndex(n) {
+    const arr = new Uint32Array(1);
+    crypto.getRandomValues(arr);
+    return arr[0] % n;
+  }
+
+  function preloadImage(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve();
+      img.onerror = reject;
+      img.src = src;
+    });
+  }
+
+  function animateClass(el, cls) {
+    return new Promise(resolve => {
+      el.classList.add(cls);
+      el.addEventListener('animationend', () => {
+        el.classList.remove(cls);
+        resolve();
+      }, { once: true });
+    });
+  }
+
+  function delay(ms) {
+    return new Promise(r => setTimeout(r, ms));
+  }
+
+  // Hash a string to a hue value 0–359
+  function hashHue(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = (hash << 5) - hash + str.charCodeAt(i);
+      hash |= 0; // force 32-bit int
+    }
+    return Math.abs(hash) % 360;
+  }
+
+  function tagColors(name) {
+    const h = hashHue(name);
+    const s = 55;
+    const l = 35;
+    return {
+      bg: `hsl(${h}, ${s}%, ${l}%)`,
+      text: '#f9f9f0',
+    };
+  }
+
+  function getSlotTop() {
+    return cardSlot.getBoundingClientRect().top;
+  }
+
+  async function drawCard() {
+    if (busy || cards.length === 0) return;
+    busy = true;
+
+    const isFirst = !hasDrawn;
+
+    // --- PHASE 1: outgoing ---
+    if (isFirst) {
+      // fade out the draw button
+      drawBtnWrap.classList.add('fading-out');
+      await delay(300);
+      drawBtnWrap.style.display = 'none';
+    } else {
+      // fade out card and metadata simultaneously using CSS transition
+      // (avoid animation class so there's no handoff flash)
+      flip.style.transition = 'opacity 0.4s ease';
+      flip.style.opacity = '0';
+      meta.classList.remove('visible');
+      await delay(450); // slightly longer than transition to ensure it's done
+      flip.style.transition = 'none';
+    }
+
+    // --- PHASE 2: pick card, show spinner, preload ---
+    const card = cards[randomIndex(cards.length)];
+    const imgSrc = `/ideas/card_images/${card.filename}`;
+
+    // show spinner
+    sparkleWrap.classList.add('visible');
+
+    // kick off preload — but don't await it yet, let the spinner breathe first
+    const preloadPromise = preloadImage(imgSrc).catch(() => null);
+
+    // minimum spinner time regardless of load speed
+    await delay(2500);
+
+    // now wait for preload to actually finish if it hasn't yet
+    const loaded = await preloadPromise;
+    if (loaded === null) {
+      sparkleWrap.classList.remove('visible');
+      busy = false;
+      return;
+    }
+
+    // --- PHASE 3: set up card for drop (face-down, off top of screen) ---
+    // Set image now — card is about to come in face-down so it won't be seen
+    cardImg.src = imgSrc;
+    cardImg.alt = card.title || 'idea card';
+
+    // Calculate how far above viewport the card needs to start
+    // Card height ≈ slot height; start from above the screen
+    const slotTop = getSlotTop();
+    const cardH = cardSlot.offsetHeight;
+    // Start above the top of the viewport: -(slotTop + cardH + small buffer)
+    const startOffset = -(slotTop + cardH + 40);
+
+    // Position card fixed, face-down, above screen
+    flip.style.transition = 'none';
+    flip.style.opacity = '1';
+    flip.style.transform = `translateY(${startOffset}px) rotateY(180deg)`;
+    flip.style.visibility = 'visible';
+    // Use a CSS variable for the drop distance
+    flip.style.setProperty('--drop-distance', `${-startOffset}px`);
+    flip.getBoundingClientRect(); // force reflow
+
+    // --- PHASE 4: drop ---
+    // card drops from top of screen into its slot
+    await animateClass(flip, 'dropping');
+
+    // lock position
+    flip.style.transition = 'none';
+    flip.style.transform = 'translateY(0px) rotateY(180deg)';
+    flip.getBoundingClientRect();
+
+    // hide spinner as card covers it
+    sparkleWrap.classList.remove('visible');
+
+    // pause before flip
+    await delay(350);
+
+    // --- PHASE 5: flip ---
+    await animateClass(flip, 'flipping');
+
+    flip.style.transition = 'none';
+    flip.style.transform = 'rotateY(0deg)';
+
+    // --- PHASE 6: metadata ---
+    channelDiv.innerHTML = '';
+    (card.channels || []).forEach(ch => {
+      const tag = document.createElement('span');
+      tag.className = 'channel-tag';
+      tag.textContent = ch;
+      const { bg, text } = tagColors(ch);
+      tag.style.backgroundColor = bg;
+      tag.style.color = text;
+      channelDiv.appendChild(tag);
+    });
+    arenaLink.href = card.url;
+
+    meta.classList.add('visible');
+    againBtn.classList.add('visible');
+
+    hasDrawn = true;
+    busy = false;
+  }
+
+  drawBtn.addEventListener('click', e => { e.preventDefault(); drawCard(); });
+  againBtn.addEventListener('click', e => { e.preventDefault(); drawCard(); });
+
+  loadIndex().catch(console.error);
+</script>
