@@ -17,10 +17,8 @@
     --fg-color:#000000;
     --link-color:blue;
     --visited-link-color:purple;
-    --btn-hover-bg:rgba(0,0,0,0.08);
     --channel-tag-opacity:0.5;
   }
-
   .display-light {
     display:inline;
   }
@@ -60,6 +58,7 @@
 .light-mode .display-light {
   display:inline;
 }
+
 .light-mode .display-dark {
   display:none;
 }
@@ -77,6 +76,7 @@
 .dark-mode .display-light {
   display:none;
 }
+
 .dark-mode .display-dark {
   display:inline;
 }
@@ -87,9 +87,9 @@ html {
   height:100%;
   padding:env(safe-area-inset); /* for iphone notch */
   /* Prevent font scaling in landscape while allowing user zoom */
-  text-size-adjust:var(--text-size-adjust);
-  -webkit-text-size-adjust:var(--text-size-adjust);
-  -moz-text-size-adjust:var(--text-size-adjust);
+  text-size-adjust:100%;
+  -webkit-text-size-adjust:100%;
+  -moz-text-size-adjust:100%;
   scroll-behavior:smooth;
 }
 
