@@ -7,7 +7,9 @@ runicon: true
 
 {% include "hallway.svg" %}
 
-## you enter a long, featureless hallway lined with doors.
+## you enter a long hallway lined with doors.
+
+the hallway extends past the limits of your vision in the dim light, but you can make out the labels on a few of the closest doors.
 
 **&gt;&gt;** open the door marked [shaders](/shaders)
 
