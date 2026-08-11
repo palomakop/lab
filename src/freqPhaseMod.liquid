@@ -1,0 +1,613 @@
+---
+layout: default
+title: freqPhaseMod demo
+description: a browser demo of a frequency/phase modulation video effect
+fullscreen: true
+---
+
+<div id="app">
+  <div id="view">
+    <canvas id="gl"></canvas>
+    <p id="msg">requesting camera…</p>
+  </div>
+
+  <section id="gui">
+    <button id="toggle" type="button" aria-expanded="true">hide controls</button>
+    <div id="panel">
+      <label class="row">modulation
+        <select id="mode">
+          <option value="0">frequency (FM)</option>
+          <option value="1">phase (PM)</option>
+        </select>
+      </label>
+      <label class="row">waveform
+        <select id="wave">
+          <option value="0">sine</option>
+          <option value="1">triangle</option>
+          <option value="2">square</option>
+          <option value="3">pulse</option>
+          <option value="4">ramp up</option>
+          <option value="5">ramp down</option>
+        </select>
+      </label>
+      <label>frequency
+        <input id="freq-n" class="num" type="number" min="0" max="120" value="5" step="1">
+        <input id="freq" type="range" min="0" max="120" value="5" step="1">
+      </label>
+      <label>depth
+        <input id="depth-n" class="num" type="number" min="-100" max="100" value="8" step="0.5">
+        <input id="depth" type="range" min="-100" max="100" value="8" step="0.5">
+      </label>
+      <label>phase
+        <input id="phase-n" class="num" type="number" min="0" max="1" value="0" step="0.001">
+        <input id="phase" type="range" min="0" max="1" value="0" step="0.001">
+      </label>
+      <label>scroll speed
+        <input id="scroll-n" class="num" type="number" min="0" max="2" value="0.3" step="0.01">
+        <input id="scroll" type="range" min="0" max="2" value="0.3" step="0.01">
+      </label>
+      <label>blur
+        <input id="blur-n" class="num" type="number" min="0" max="5" value="1.5" step="0.05">
+        <input id="blur" type="range" min="0" max="5" value="1.5" step="0.05">
+      </label>
+      <label id="dutyRow">duty
+        <input id="duty-n" class="num" type="number" min="0.05" max="0.95" value="0.5" step="0.01">
+        <input id="duty" type="range" min="0.05" max="0.95" value="0.5" step="0.01">
+      </label>
+      <label id="widthRow">pulse width
+        <input id="width-n" class="num" type="number" min="2" max="12" value="4" step="0.5">
+        <input id="width" type="range" min="2" max="12" value="4" step="0.5">
+      </label>
+      <button id="shot" type="button">save image</button>
+      <a id="exit" href="/hallway">return to the hallway</a>
+    </div>
+  </section>
+</div>
+
+<style>
+  /* app splits into webcam view + gui panel; row on desktop, column on mobile */
+  #app { position:fixed; inset:0; display:flex; }
+
+  #view {
+    flex:1; position:relative;
+    min-width:0; min-height:0;
+    background:#000; overflow:hidden;
+  }
+
+  /* canvas fills the view and letterboxes to camera aspect via object-fit */
+  #gl { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; display:block; }
+
+  #msg {
+    position:absolute; margin:0; padding:0 1ch;
+    color:#f9f9f0; font-size:0.8rem; text-align:center;
+  }
+
+  /* gui: three.js-style, lab colors + font */
+  #gui {
+    flex:none; width:240px; max-width:240px;
+    display:flex; flex-direction:column;
+    color:var(--fg-color); background:var(--bg-color);
+    border-left:1.5px solid var(--fg-color);
+    font-size:0.72rem; line-height:1.4;
+  }
+
+  #toggle {
+    font:inherit; font-size:0.72rem; color:inherit;
+    background:none; border:none; border-bottom:1.5px solid var(--fg-color);
+    padding:0.6ch 1ch; text-align:left; cursor:pointer; flex:none;
+  }
+
+  #panel { display:flex; flex-direction:column; gap:0.8ch; padding:1ch; overflow-y:auto; }
+  #gui.collapsed #panel { display:none; }
+
+  /* desktop collapsed: shrink to a thin vertical-text bar you click to re-open */
+  #gui.collapsed { width:auto; max-width:none; }
+  #gui.collapsed #toggle {
+    writing-mode:vertical-rl; text-orientation:mixed;
+    border-bottom:none; padding:1ch 0.6ch; height:100%;
+  }
+
+  /* label text left, number right on the top row; slider spans full width below */
+  #panel label { display:grid; grid-template-columns:1fr auto; align-items:center; gap:0.2ch 0.6ch; }
+  #panel label.row { display:flex; align-items:center; gap:0.6ch; }
+  #panel input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--fg-color); }
+
+  .num {
+    width:7ch; text-align:right;
+    font:inherit; font-size:0.72rem; color:inherit;
+    background:var(--bg-color); border:1.5px solid var(--fg-color);
+    border-radius:0.4rem; padding:0.1em 0.3ch;
+  }
+  .num::-webkit-inner-spin-button, .num::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
+  .num { -moz-appearance:textfield; appearance:textfield; }
+
+  #panel select {
+    font:inherit; font-size:0.72rem; color:inherit;
+    background:var(--bg-color); border:1.5px solid var(--fg-color);
+    border-radius:0.4rem; padding:0.1em 0.4ch;
+  }
+
+  #shot {
+    font:inherit; font-size:0.72rem; color:inherit;
+    background:none; border:1.5px solid var(--fg-color);
+    border-radius:0.4rem; padding:0.4ch 1ch; cursor:pointer; margin-top:0.4ch;
+  }
+
+  /* exit link: inside the panel, visually set apart */
+  #exit {
+    text-align:center; font-size:0.72rem;
+    border-radius:0.4rem; padding:0.4ch 1ch; margin-top:0.8ch;
+  }
+
+  /* mobile: stack webcam over gui, gui scrolls */
+  @media (max-width:600px) {
+    #app { flex-direction:column; }
+    #gui { width:auto; max-width:none; border-left:none; border-top:1.5px solid var(--fg-color); max-height:45vh; }
+    #gui.collapsed { max-height:none; }
+    /* keep the toggle horizontal on mobile (bottom panel, vertical text is awkward) */
+    #gui.collapsed #toggle { writing-mode:horizontal-tb; height:auto; padding:0.6ch 1ch; }
+  }
+</style>
+
+{% raw %}
+<script>
+(() => {
+  const canvas = document.getElementById('gl');
+  const msg = document.getElementById('msg');
+  const gl = canvas.getContext('webgl2', { preserveDrawingBuffer:true });
+  if (!gl) { msg.textContent = 'webgl2 not supported'; return; }
+
+  // half-float render targets keep the blurred gradient smooth (8-bit bands under phase mod)
+  const floatOK = !!gl.getExtension('EXT_color_buffer_float');
+  console.log('EXT_color_buffer_float:', floatOK);
+  console.log('OES_texture_float_linear:', !!gl.getExtension('OES_texture_float_linear'));
+  let scanChecked = false;
+
+  const TARGET_W = 1600;   // output canvas render width
+  const PROC_W = 512;      // width of blur pyramid level 0
+  const LEVELS = 6;        // pyramid depth (max blur)
+
+  // fullscreen triangle
+  const vsrc = `#version 300 es
+  out vec2 uv;
+  void main(){
+    vec2 p = vec2((gl_VertexID<<1)&2, gl_VertexID&2);
+    uv = p;
+    gl_Position = vec4(p*2.0-1.0, 0.0, 1.0);
+  }`;
+
+  // copy camera into the pyramid base (flip y once here)
+  const fsrcCopy = `#version 300 es
+  precision highp float;
+  in vec2 uv; out vec4 frag;
+  uniform sampler2D src;
+  void main(){ frag = texture(src, vec2(uv.x, 1.0 - uv.y)); }`;
+
+  // dual kawase downsample (samples the larger source into a half-size target)
+  const fsrcDown = `#version 300 es
+  precision highp float;
+  in vec2 uv; out vec4 frag;
+  uniform sampler2D src;
+  uniform vec2 texel;   // 1.0 / source size
+  void main(){
+    vec4 sum = texture(src, uv) * 4.0;
+    sum += texture(src, uv + vec2(-texel.x, -texel.y));
+    sum += texture(src, uv + vec2( texel.x, -texel.y));
+    sum += texture(src, uv + vec2(-texel.x,  texel.y));
+    sum += texture(src, uv + vec2( texel.x,  texel.y));
+    frag = sum / 8.0;
+  }`;
+
+  // dual kawase upsample (samples the smaller source into a larger target)
+  const fsrcUp = `#version 300 es
+  precision highp float;
+  in vec2 uv; out vec4 frag;
+  uniform sampler2D src;
+  uniform vec2 texel;   // 1.0 / source size
+  void main(){
+    vec4 sum = texture(src, uv + vec2(-texel.x*2.0, 0.0));
+    sum += texture(src, uv + vec2(-texel.x, texel.y)) * 2.0;
+    sum += texture(src, uv + vec2(0.0, texel.y*2.0));
+    sum += texture(src, uv + vec2(texel.x, texel.y)) * 2.0;
+    sum += texture(src, uv + vec2(texel.x*2.0, 0.0));
+    sum += texture(src, uv + vec2(texel.x, -texel.y)) * 2.0;
+    sum += texture(src, uv + vec2(0.0, -texel.y*2.0));
+    sum += texture(src, uv + vec2(-texel.x, -texel.y)) * 2.0;
+    frag = sum / 12.0;
+  }`;
+
+  // blend two textures (for fractional blur level -> smooth slider)
+  const fsrcMix = `#version 300 es
+  precision highp float;
+  in vec2 uv; out vec4 frag;
+  uniform sampler2D a; uniform sampler2D b; uniform float t;
+  void main(){ frag = mix(texture(a, uv), texture(b, uv), t); }`;
+
+  // luma of the blurred source into R (start of the prefix sum)
+  const fsrcLuma = `#version 300 es
+  precision highp float;
+  in vec2 uv; out vec4 frag;
+  uniform sampler2D src;
+  void main(){
+    vec3 c = texture(src, uv).rgb;
+    float l = clamp(dot(c, vec3(0.2126, 0.7152, 0.0722)), 0.0, 1.0);
+    frag = vec4(l, 0.0, 0.0, 1.0);
+  }`;
+
+  // one Hillis-Steele prefix-sum pass along x: add the pixel `offset` texels to the left
+  const fsrcScan = `#version 300 es
+  precision highp float;
+  in vec2 uv; out vec4 frag;
+  uniform sampler2D src;
+  uniform int offset;
+  void main(){
+    ivec2 c = ivec2(gl_FragCoord.xy);
+    ivec2 res = textureSize(src, 0);
+    float here = texelFetch(src, c, 0).r;
+    ivec2 nc = ivec2(c.x - offset, c.y);
+    float there = (nc.x >= 0) ? texelFetch(src, nc, 0).r : 0.0;
+    frag = vec4(here + there, 0.0, 0.0, 1.0);
+  }`;
+
+  // oscillator reads the blurred texture. modulation term (m)
+  // is isolated so the FM/prefix-sum path drops in here later.
+  const fsrcMain = `#version 300 es
+  precision highp float;
+  in vec2 uv; out vec4 frag;
+  uniform sampler2D src;      // PM: blurred source. FM: prefix-sum (integral) texture
+  uniform float uFreq, uDepth, uPhase, uDuty, uWidth;
+  uniform int uWave, uMode, uDebug;
+  #define TAU 6.28318530718
+  float luma(vec3 c){ return dot(c, vec3(0.2126, 0.7152, 0.0722)); }
+  void main(){
+    float m;
+    if (uMode == 0){
+      // FM: normalized running integral (prefix sum / width), same as the TD tool.
+      // real images are dark so this term is small; FM depth is scaled up to suit.
+      ivec2 res = textureSize(src, 0);
+      // sample the integral with manual linear interp along x (smooths the 512->1600
+      // upscale without needing OES_texture_float_linear, which 32F filtering requires)
+      float fx = uv.x * float(res.x) - 0.5;
+      int x0 = clamp(int(floor(fx)), 0, res.x - 1);
+      int x1 = clamp(x0 + 1, 0, res.x - 1);
+      float fr = fx - float(x0);
+      int yy = clamp(int(uv.y * float(res.y)), 0, res.y - 1);
+      float a = texelFetch(src, ivec2(x0, yy), 0).r;
+      float b = texelFetch(src, ivec2(x1, yy), 0).r;
+      m = mix(a, b, fr) / float(res.x);
+    } else {
+      // PM: local blurred brightness
+      m = clamp(luma(texture(src, uv).rgb), 0.0, 1.0);
+    }
+
+    if (uDebug == 1){ frag = vec4(vec3(m), 1.0); return; }  // DEBUG: show m directly
+
+    float s = uv.x;
+    float fmScale = (uMode == 0) ? 12.0 : 1.0;   // FM integral term is small; scale it up
+    float cyc = uFreq*s + uDepth*fmScale*m - fract(uPhase);
+    float phase = TAU * cyc;
+    float tph = fract(cyc);
+
+    float carrier;
+    if (uWave == 0)      carrier = 0.5 + 0.5*cos(phase + TAU*0.5);
+    else if (uWave == 1) carrier = 1.0 - abs(tph - 0.5) * 2.0;
+    else if (uWave == 2) carrier = step(uDuty, tph);
+    else if (uWave == 3){
+      float tphP = fract(cyc + 0.5);
+      float lw = max(uWidth, 2.0);
+      float d = min(tphP, 1.0 - tphP);
+      float w = abs(dFdx(cyc));
+      float linePx = d / max(w, 1e-6);
+      carrier = 1.0 - smoothstep(lw*0.5 - 0.5, lw*0.5 + 0.5, linePx);
+    }
+    else if (uWave == 4) carrier = tph;
+    else                 carrier = 1.0 - tph;
+
+    frag = vec4(vec3(carrier), 1.0);
+  }`;
+
+  function sh(type, src){
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src); gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(s));
+    return s;
+  }
+  function program(fs){
+    const p = gl.createProgram();
+    gl.attachShader(p, sh(gl.VERTEX_SHADER, vsrc));
+    gl.attachShader(p, sh(gl.FRAGMENT_SHADER, fs));
+    gl.linkProgram(p);
+    return p;
+  }
+  const progCopy = program(fsrcCopy);
+  const progDown = program(fsrcDown);
+  const progUp   = program(fsrcUp);
+  const progMix  = program(fsrcMix);
+  const progLuma = program(fsrcLuma);
+  const progScan = program(fsrcScan);
+  const progMain = program(fsrcMain);
+
+  const uScanOffset = gl.getUniformLocation(progScan, 'offset');
+
+  const uDownTexel = gl.getUniformLocation(progDown, 'texel');
+  const uUpTexel   = gl.getUniformLocation(progUp, 'texel');
+  const uMix = { a:gl.getUniformLocation(progMix,'a'), b:gl.getUniformLocation(progMix,'b'), t:gl.getUniformLocation(progMix,'t') };
+  const M = {
+    freq:gl.getUniformLocation(progMain,'uFreq'),
+    depth:gl.getUniformLocation(progMain,'uDepth'),
+    phase:gl.getUniformLocation(progMain,'uPhase'),
+    duty:gl.getUniformLocation(progMain,'uDuty'),
+    width:gl.getUniformLocation(progMain,'uWidth'),
+    wave:gl.getUniformLocation(progMain,'uWave'),
+    mode:gl.getUniformLocation(progMain,'uMode')
+  };
+
+  // camera texture
+  const camTex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, camTex);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+  function makeTarget(){
+    const tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    return { tex, fbo:gl.createFramebuffer(), w:1, h:1 };
+  }
+  function sizeTarget(t, w, h){
+    t.w = w; t.h = h;
+    gl.bindTexture(gl.TEXTURE_2D, t.tex);
+    if (floatOK)
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, w, h, 0, gl.RGBA, gl.HALF_FLOAT, null);
+    else
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, t.fbo);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t.tex, 0);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  }
+
+  // pyramid: level 0 is base (PROC_W), each subsequent level half size.
+  // one extra scratch target per level for the upsample chain result.
+  const down = [], up = [];
+  for (let i = 0; i < LEVELS + 1; i++){ down.push(makeTarget()); up.push(makeTarget()); }
+  const holdA = makeTarget(), holdB = makeTarget(), holdMix = makeTarget();  // base-size scratch
+  // prefix-sum needs full 32-bit float precision (the integral reaches into the hundreds).
+  // two targets to ping-pong the scan passes. requires EXT_color_buffer_float (floatOK).
+  const scanA = makeTarget(), scanB = makeTarget();
+  function sizeScan(w, h){
+    for (const s of [scanA, scanB]){
+      s.w = w; s.h = h;
+      gl.bindTexture(gl.TEXTURE_2D, s.tex);
+      // nearest filtering: prefix sum must read exact texels, not blended ones
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      if (floatOK)
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, w, h, 0, gl.RGBA, gl.FLOAT, null);
+      else
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, s.fbo);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, s.tex, 0);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    }
+  }
+
+  let baseW = PROC_W, baseH = PROC_W;
+
+  function sizePyramid(){
+    for (let i = 0; i <= LEVELS; i++){
+      const w = Math.max(1, baseW >> i), h = Math.max(1, baseH >> i);
+      sizeTarget(down[i], w, h);
+      sizeTarget(up[i], w, h);
+    }
+    sizeTarget(holdA, baseW, baseH);
+    sizeTarget(holdB, baseW, baseH);
+    sizeTarget(holdMix, baseW, baseH);
+    sizeScan(baseW, baseH);
+  }
+
+  const video = document.createElement('video');
+  video.playsInline = true; video.muted = true;
+  let camW = 1, camH = 1, ready = false;
+
+  // camera needs a secure context (https or localhost); warn if we're not in one
+  if (!window.isSecureContext || !navigator.mediaDevices){
+    msg.textContent = 'camera needs https (or localhost)';
+  }
+  (navigator.mediaDevices?.getUserMedia({ video:true }) ?? Promise.reject())
+    .then(stream => { video.srcObject = stream; return video.play(); })
+    .then(() => {
+      camW = video.videoWidth; camH = video.videoHeight;
+      canvas.width = TARGET_W;
+      canvas.height = Math.round(TARGET_W * camH / camW);
+      baseW = PROC_W;
+      baseH = Math.max(1, Math.round(PROC_W * camH / camW));
+      sizePyramid();
+      ready = true; msg.style.display = 'none';
+    })
+    .catch(() => {
+      msg.textContent = window.isSecureContext ? 'camera unavailable' : 'camera needs https (or localhost)';
+    });
+
+  const el = id => document.getElementById(id);
+  const t0 = performance.now();
+
+  function pass(target){
+    gl.bindFramebuffer(gl.FRAMEBUFFER, target ? target.fbo : null);
+    gl.viewport(0, 0, target ? target.w : canvas.width, target ? target.h : canvas.height);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+
+  function frame(){
+    if (ready){
+      // upload camera -> pyramid base (down[0])
+      gl.bindTexture(gl.TEXTURE_2D, camTex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
+      gl.useProgram(progCopy);
+      gl.bindTexture(gl.TEXTURE_2D, camTex);
+      pass(down[0]);
+
+      // blur amount: integer levels + fractional blend for smooth slider
+      const blur = +el('blur').value;
+      const n = Math.min(LEVELS, Math.floor(blur));
+      const frac = blur - Math.floor(blur);
+
+      // downsample chain. go one level deeper when we'll blend toward n+1,
+      // otherwise down[n+1] holds a stale (frozen) frame.
+      const deepest = (frac > 0.001) ? Math.min(LEVELS, n + 1) : n;
+      gl.useProgram(progDown);
+      for (let i = 1; i <= deepest; i++){
+        gl.uniform2f(uDownTexel, 1.0 / down[i-1].w, 1.0 / down[i-1].h);
+        gl.bindTexture(gl.TEXTURE_2D, down[i-1].tex);
+        pass(down[i]);
+      }
+
+      // upsample down-level `level` back to base size, then copy the result into
+      // `holdOut` so it's safe from the next upsample overwriting the shared up[] chain.
+      function upsampleInto(level, holdOut){
+        let srcTarget;
+        if (level === 0){
+          srcTarget = down[0];
+        } else {
+          gl.useProgram(progUp);
+          let cur = down[level];
+          for (let i = level; i >= 1; i--){
+            gl.uniform2f(uUpTexel, 1.0 / cur.w, 1.0 / cur.h);
+            gl.bindTexture(gl.TEXTURE_2D, cur.tex);
+            pass(up[i-1]);
+            cur = up[i-1];
+          }
+          srcTarget = up[0];
+        }
+        // copy srcTarget -> holdOut (mix with itself at t=0 is a plain copy)
+        gl.useProgram(progMix);
+        gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, srcTarget.tex);
+        gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, srcTarget.tex);
+        gl.uniform1i(uMix.a, 0); gl.uniform1i(uMix.b, 1); gl.uniform1f(uMix.t, 0.0);
+        pass(holdOut);
+        gl.activeTexture(gl.TEXTURE0);
+      }
+
+      let result;
+      if (n === 0 && frac < 0.001){
+        result = down[0];                    // no blur
+      } else if (frac < 0.001){
+        upsampleInto(n, holdA);              // exact integer level
+        result = holdA;
+      } else {
+        // blend level n and n+1 for smooth slider motion, each safely stashed first
+        upsampleInto(n, holdA);
+        upsampleInto(Math.min(LEVELS, n + 1), holdB);
+        gl.useProgram(progMix);
+        gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, holdA.tex);
+        gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, holdB.tex);
+        gl.uniform1i(uMix.a, 0); gl.uniform1i(uMix.b, 1); gl.uniform1f(uMix.t, frac);
+        pass(holdMix);
+        gl.activeTexture(gl.TEXTURE0);
+        result = holdMix;
+      }
+
+      // choose the source the oscillator reads, based on mode
+      const mode = +el('mode').value;
+      let modSrc = result;   // PM: blurred source directly
+
+      if (mode === 0){
+        // ensure exact-texel (NEAREST) sampling during the scan passes
+        for (const s of [scanA, scanB]){
+          gl.bindTexture(gl.TEXTURE_2D, s.tex);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        }
+        // FM: luma(result) -> scanA, then Hillis-Steele prefix sum along x
+        gl.activeTexture(gl.TEXTURE0);
+        gl.useProgram(progLuma);
+        gl.uniform1i(gl.getUniformLocation(progLuma, 'src'), 0);
+        gl.bindTexture(gl.TEXTURE_2D, result.tex);
+        pass(scanA);
+
+        gl.useProgram(progScan);
+        gl.uniform1i(gl.getUniformLocation(progScan, 'src'), 0);
+        let read = scanA, write = scanB;
+        const passes = Math.ceil(Math.log2(Math.max(2, baseW)));
+        for (let i = 0; i < passes; i++){
+          gl.uniform1i(uScanOffset, 1 << i);
+          gl.bindTexture(gl.TEXTURE_2D, read.tex);
+          pass(write);
+          const tmp = read; read = write; write = tmp;
+        }
+        modSrc = read;   // final prefix-sum texture
+        if (!scanChecked){
+          scanChecked = true;
+          gl.bindFramebuffer(gl.FRAMEBUFFER, read.fbo);
+          const st = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+          console.log('scan FBO complete:', st === gl.FRAMEBUFFER_COMPLETE, 'status', st);
+          // read back one pixel near the right edge to see if the sum accumulated
+          const px = new Float32Array(4);
+          gl.readPixels(Math.min(read.w-1, read.w-2), Math.floor(read.h/2), 1, 1, gl.RGBA, gl.FLOAT, px);
+          console.log('sample integral value near right edge:', px[0], '(expect a large-ish number, not 0)');
+          gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        }
+      }
+
+      // oscillator: read the chosen source -> canvas
+      gl.useProgram(progMain);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.uniform1i(gl.getUniformLocation(progMain, 'src'), 0);
+      gl.bindTexture(gl.TEXTURE_2D, modSrc.tex);
+      gl.uniform1i(M.mode, mode);
+      gl.uniform1i(gl.getUniformLocation(progMain,'uDebug'), window.DBG ? 1 : 0);
+      gl.uniform1f(M.freq, +el('freq').value);
+      gl.uniform1f(M.depth, +el('depth').value);
+      const elapsed = (performance.now() - t0) / 1000.0;
+      const scrolled = (+el('phase').value) + (+el('scroll').value) * elapsed;
+      gl.uniform1f(M.phase, scrolled - Math.floor(scrolled));  // static offset + scroll, wrapped 0..1
+      gl.uniform1f(M.duty, +el('duty').value);
+      gl.uniform1f(M.width, +el('width').value);
+      gl.uniform1i(M.wave, +el('wave').value);
+      pass(null);
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  // keep each range paired with its number field (two-way)
+  ['freq','depth','phase','scroll','duty','width','blur'].forEach(id => {
+    const r = el(id), n = el(id + '-n');
+    r.addEventListener('input', () => { n.value = r.value; });
+    n.addEventListener('input', () => { r.value = n.value; });
+  });
+
+  // show duty for square, width for pulse
+  function syncRows(){
+    const wv = el('wave').value;
+    el('dutyRow').style.display = wv === '2' ? '' : 'none';
+    el('widthRow').style.display = wv === '3' ? '' : 'none';
+  }
+  el('wave').addEventListener('change', syncRows);
+  syncRows();
+
+  // collapse toggle
+  const gui = el('gui'), toggle = el('toggle');
+  toggle.addEventListener('click', () => {
+    const hidden = gui.classList.toggle('collapsed');
+    toggle.textContent = hidden ? 'show controls' : 'hide controls';
+    toggle.setAttribute('aria-expanded', String(!hidden));
+  });
+
+  // save canvas as png
+  el('shot').addEventListener('click', () => {
+    canvas.toBlob(b => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(b);
+      a.download = 'freqphasemod.png';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+  });
+})();
+</script>
+{% endraw %}
