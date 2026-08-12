@@ -21,4 +21,6 @@ the hallway extends past the limits of your vision in the dim light, but you can
 
 **&gt;&gt;** open the door marked [ideas](/ideas)
 
+**&gt;&gt;** open the door marked [freqPhaseMod](/freqPhaseMod)
+
 **&gt;&gt;** go back to the [atrium](/atrium)

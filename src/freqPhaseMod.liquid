@@ -1,7 +1,7 @@
 ---
 layout: default
-title: freqPhaseMod demo
-description: a browser demo of a frequency/phase modulation video effect
+title: freqPhaseMod
+description: browser demo of frequency/phase modulation video effect
 fullscreen: true
 ---
 
@@ -14,20 +14,17 @@ fullscreen: true
   <section id="gui">
     <button id="toggle" type="button" aria-expanded="true">hide controls</button>
     <div id="panel">
-      <label class="row">modulation
+      <p class="flavor">you have entered a small, dim room. on the opposite wall is a glowing screen showing strange, oscillating imagery. before you is a control panel with numerous sliders, switches, and dials.</p>
+      <div class="divider"></div>
+      <div class="preset-row">
+        <span>preset</span>
+        <select id="preset"></select>
+        <button id="preset-apply" type="button" title="re-apply preset" disabled>↺</button>
+      </div>
+      <label class="row">mode
         <select id="mode">
-          <option value="0">frequency (FM)</option>
-          <option value="1">phase (PM)</option>
-        </select>
-      </label>
-      <label class="row">waveform
-        <select id="wave">
-          <option value="0">sine</option>
-          <option value="1">triangle</option>
-          <option value="2">square</option>
-          <option value="3">pulse</option>
-          <option value="4">ramp up</option>
-          <option value="5">ramp down</option>
+          <option value="1">Phase Mod</option>
+          <option value="0">Frequency Mod</option>
         </select>
       </label>
       <label>frequency
@@ -46,9 +43,16 @@ fullscreen: true
         <input id="scroll-n" class="num" type="number" min="0" max="2" value="0.3" step="0.01">
         <input id="scroll" type="range" min="0" max="2" value="0.3" step="0.01">
       </label>
-      <label>blur
-        <input id="blur-n" class="num" type="number" min="0" max="5" value="1.5" step="0.05">
-        <input id="blur" type="range" min="0" max="5" value="1.5" step="0.05">
+      <div class="section-head">waveform</div>
+      <label class="row">shape
+        <select id="wave">
+          <option value="0">sine</option>
+          <option value="1">triangle</option>
+          <option value="2">square</option>
+          <option value="3">pulse</option>
+          <option value="4">ramp up</option>
+          <option value="5">ramp down</option>
+        </select>
       </label>
       <label id="dutyRow">duty
         <input id="duty-n" class="num" type="number" min="0.05" max="0.95" value="0.5" step="0.01">
@@ -58,6 +62,22 @@ fullscreen: true
         <input id="width-n" class="num" type="number" min="2" max="12" value="4" step="0.5">
         <input id="width" type="range" min="2" max="12" value="4" step="0.5">
       </label>
+      <div class="section-head">source image</div>
+      <label>blur
+        <input id="blur-n" class="num" type="number" min="0" max="5" value="1.5" step="0.05">
+        <input id="blur" type="range" min="0" max="5" value="1.5" step="0.05">
+      </label>
+      <label>contrast
+        <input id="contrast-n" class="num" type="number" min="0" max="4" value="1" step="0.05">
+        <input id="contrast" type="range" min="0" max="4" value="1" step="0.05">
+      </label>
+      <label>invert
+        <input type="checkbox" id="invert-check">
+      </label>
+      <label>view source
+        <input type="checkbox" id="pip-check">
+      </label>
+      <div class="divider"></div>
       <button id="shot" type="button">save image</button>
       <a id="exit" href="/hallway">return to the hallway</a>
     </div>
@@ -84,20 +104,23 @@ fullscreen: true
 
   /* gui: three.js-style, lab colors + font */
   #gui {
-    flex:none; width:240px; max-width:240px;
+    flex:none; width:280px; max-width:280px;
     display:flex; flex-direction:column;
     color:var(--fg-color); background:var(--bg-color);
     border-left:1.5px solid var(--fg-color);
-    font-size:0.72rem; line-height:1.4;
+    font-size:1em; line-height:1.4;
   }
 
   #toggle {
-    font:inherit; font-size:0.72rem; color:inherit;
+    font:inherit; color:inherit;
     background:none; border:none; border-bottom:1.5px solid var(--fg-color);
     padding:0.6ch 1ch; text-align:left; cursor:pointer; flex:none;
   }
 
-  #panel { display:flex; flex-direction:column; gap:0.8ch; padding:1ch; overflow-y:auto; }
+  #panel { display:flex; flex-direction:column; gap:1.2ch; padding:1.6ch; overflow-y:auto; }
+  .flavor { margin:0; font-size:0.85em;font-style:italic; opacity:0.7; line-height:1.5; }
+  .section-head { font-size:0.78em; text-transform:uppercase; letter-spacing:0.06em; opacity:0.5; margin-top:0.6ch; border-top:1px solid currentColor; padding-top:0.7ch; }
+  .divider { border-top:1px solid currentColor; opacity:0.25; margin-top:0.4ch; }
   #gui.collapsed #panel { display:none; }
 
   /* desktop collapsed: shrink to a thin vertical-text bar you click to re-open */
@@ -109,12 +132,22 @@ fullscreen: true
 
   /* label text left, number right on the top row; slider spans full width below */
   #panel label { display:grid; grid-template-columns:1fr auto; align-items:center; gap:0.2ch 0.6ch; }
-  #panel label.row { display:flex; align-items:center; gap:0.6ch; }
+  #panel label.row { margin-bottom:0.6ch; }
+
+  .preset-row { display:flex; align-items:center; gap:0.4ch; margin-bottom:0.6ch; }
+  .preset-row span { flex:1; }
+  #preset-apply {
+    font:inherit; color:inherit;
+    background:none; border:1.5px solid var(--fg-color);
+    border-radius:0.4rem; padding:0.1em 0.8ch; cursor:pointer; flex:none;
+  }
+  #preset-apply:disabled { opacity:0.3; cursor:default; }
   #panel input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--fg-color); }
+  #panel input[type=checkbox] { width:1.5em; height:1.5em; accent-color:var(--fg-color); cursor:pointer; }
 
   .num {
     width:7ch; text-align:right;
-    font:inherit; font-size:0.72rem; color:inherit;
+    font:inherit; color:inherit;
     background:var(--bg-color); border:1.5px solid var(--fg-color);
     border-radius:0.4rem; padding:0.1em 0.3ch;
   }
@@ -122,21 +155,22 @@ fullscreen: true
   .num { -moz-appearance:textfield; appearance:textfield; }
 
   #panel select {
-    font:inherit; font-size:0.72rem; color:inherit;
+    font:inherit; color:inherit;
     background:var(--bg-color); border:1.5px solid var(--fg-color);
     border-radius:0.4rem; padding:0.1em 0.4ch;
+    appearance:auto; -webkit-appearance:auto;
   }
 
   #shot {
-    font:inherit; font-size:0.72rem; color:inherit;
+    font:inherit; color:inherit;
     background:none; border:1.5px solid var(--fg-color);
     border-radius:0.4rem; padding:0.4ch 1ch; cursor:pointer; margin-top:0.4ch;
   }
 
   /* exit link: inside the panel, visually set apart */
   #exit {
-    text-align:center; font-size:0.72rem;
-    border-radius:0.4rem; padding:0.4ch 1ch; margin-top:0.8ch;
+    text-align:center;
+    border-radius:0.4rem; padding:0.4ch 1ch; margin-top:0.8ch; margin-bottom:1.2ch;
   }
 
   /* mobile: stack webcam over gui, gui scrolls */
@@ -151,6 +185,17 @@ fullscreen: true
 
 {% raw %}
 <script>
+// presets: add entries here to grow the preset menu
+const PRESETS = [
+  { name: 'default PM', mode:1, wave:0, freq:5, depth:8,  phase:0, scroll:0.3,  blur:1.5, contrast:1 },
+  { name: 'default FM', mode:0, wave:0, freq:5, depth:8,  phase:0, scroll:0.3,  blur:1.5, contrast:1 },
+  { name: 'topographic', mode:1, wave:3, freq:0, depth:24,  phase:0, scroll:0.3,  blur:2, contrast:1 },
+  { name: 'pointilist', mode:0, wave:3, freq:3, depth:90,  phase:0, scroll:1.5,  blur:0, contrast:1 },
+  { name: 'one-bit', mode:1, wave:2, freq:5, depth:5,  phase:0, scroll:0.2,  blur:1, contrast:4 },
+  { name: 'dazzle', mode:0, wave:4, freq:7, depth:65,  phase:0, scroll:0,  blur:1, contrast:4 },
+  { name: 'metal', mode:1, wave:1, freq:0, depth:3,  phase:0, scroll:0,  blur:0, contrast:4 },
+];
+
 (() => {
   const canvas = document.getElementById('gl');
   const msg = document.getElementById('msg');
@@ -159,11 +204,9 @@ fullscreen: true
 
   // half-float render targets keep the blurred gradient smooth (8-bit bands under phase mod)
   const floatOK = !!gl.getExtension('EXT_color_buffer_float');
-  console.log('EXT_color_buffer_float:', floatOK);
-  console.log('OES_texture_float_linear:', !!gl.getExtension('OES_texture_float_linear'));
-  let scanChecked = false;
+  gl.getExtension('OES_texture_float_linear');
 
-  const TARGET_W = 1600;   // output canvas render width
+  const TARGET_W = 1600;   // output canvas max dimension (applied to the longer side)
   const PROC_W = 512;      // width of blur pyramid level 0
   const LEVELS = 6;        // pyramid depth (max blur)
 
@@ -176,12 +219,19 @@ fullscreen: true
     gl_Position = vec4(p*2.0-1.0, 0.0, 1.0);
   }`;
 
-  // copy camera into the pyramid base (flip y once here)
+  // copy camera into the pyramid base (flip y once here; apply contrast)
   const fsrcCopy = `#version 300 es
   precision highp float;
   in vec2 uv; out vec4 frag;
   uniform sampler2D src;
-  void main(){ frag = texture(src, vec2(uv.x, 1.0 - uv.y)); }`;
+  uniform float uContrast;
+  uniform float uInvert;
+  void main(){
+    vec4 c = texture(src, vec2(uv.x, 1.0 - uv.y));
+    c.rgb = clamp((c.rgb - 0.5) * uContrast + 0.5, 0.0, 1.0);
+    c.rgb = mix(c.rgb, 1.0 - c.rgb, uInvert);
+    frag = c;
+  }`;
 
   // dual kawase downsample (samples the larger source into a half-size target)
   const fsrcDown = `#version 300 es
@@ -242,7 +292,6 @@ fullscreen: true
   uniform int offset;
   void main(){
     ivec2 c = ivec2(gl_FragCoord.xy);
-    ivec2 res = textureSize(src, 0);
     float here = texelFetch(src, c, 0).r;
     ivec2 nc = ivec2(c.x - offset, c.y);
     float there = (nc.x >= 0) ? texelFetch(src, nc, 0).r : 0.0;
@@ -256,7 +305,7 @@ fullscreen: true
   in vec2 uv; out vec4 frag;
   uniform sampler2D src;      // PM: blurred source. FM: prefix-sum (integral) texture
   uniform float uFreq, uDepth, uPhase, uDuty, uWidth;
-  uniform int uWave, uMode, uDebug;
+  uniform int uWave, uMode;
   #define TAU 6.28318530718
   float luma(vec3 c){ return dot(c, vec3(0.2126, 0.7152, 0.0722)); }
   void main(){
@@ -280,10 +329,8 @@ fullscreen: true
       m = clamp(luma(texture(src, uv).rgb), 0.0, 1.0);
     }
 
-    if (uDebug == 1){ frag = vec4(vec3(m), 1.0); return; }  // DEBUG: show m directly
-
     float s = uv.x;
-    float fmScale = (uMode == 0) ? 12.0 : 1.0;   // FM integral term is small; scale it up
+    float fmScale = (uMode == 0) ? 2.4 : 1.0;   // FM integral term is small; scale it up
     float cyc = uFreq*s + uDepth*fmScale*m - fract(uPhase);
     float phase = TAU * cyc;
     float tph = fract(cyc);
@@ -306,6 +353,17 @@ fullscreen: true
     frag = vec4(vec3(carrier), 1.0);
   }`;
 
+  // grayscale blit for the PiP source preview
+  const fsrcGray = `#version 300 es
+  precision highp float;
+  in vec2 uv; out vec4 frag;
+  uniform sampler2D src;
+  void main(){
+    vec3 c = texture(src, uv).rgb;
+    float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
+    frag = vec4(vec3(l), 1.0);
+  }`;
+
   function sh(type, src){
     const s = gl.createShader(type);
     gl.shaderSource(s, src); gl.compileShader(s);
@@ -326,8 +384,12 @@ fullscreen: true
   const progLuma = program(fsrcLuma);
   const progScan = program(fsrcScan);
   const progMain = program(fsrcMain);
+  const progGray = program(fsrcGray);
 
-  const uScanOffset = gl.getUniformLocation(progScan, 'offset');
+  const uGraySrc    = gl.getUniformLocation(progGray, 'src');
+  const uScanOffset   = gl.getUniformLocation(progScan, 'offset');
+  const uCopyContrast = gl.getUniformLocation(progCopy, 'uContrast');
+  const uCopyInvert   = gl.getUniformLocation(progCopy, 'uInvert');
 
   const uDownTexel = gl.getUniformLocation(progDown, 'texel');
   const uUpTexel   = gl.getUniformLocation(progUp, 'texel');
@@ -422,8 +484,10 @@ fullscreen: true
     .then(stream => { video.srcObject = stream; return video.play(); })
     .then(() => {
       camW = video.videoWidth; camH = video.videoHeight;
-      canvas.width = TARGET_W;
-      canvas.height = Math.round(TARGET_W * camH / camW);
+      // cap the longer dimension to TARGET_W so portrait cameras don't blow up in height
+      const scale = TARGET_W / Math.max(camW, camH);
+      canvas.width  = Math.round(camW * scale);
+      canvas.height = Math.round(camH * scale);
       baseW = PROC_W;
       baseH = Math.max(1, Math.round(PROC_W * camH / camW));
       sizePyramid();
@@ -449,6 +513,8 @@ fullscreen: true
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
       gl.useProgram(progCopy);
       gl.bindTexture(gl.TEXTURE_2D, camTex);
+      gl.uniform1f(uCopyContrast, +el('contrast').value);
+      gl.uniform1f(uCopyInvert, el('invert-check').checked ? 1.0 : 0.0);
       pass(down[0]);
 
       // blur amount: integer levels + fractional blend for smooth slider
@@ -540,17 +606,6 @@ fullscreen: true
           const tmp = read; read = write; write = tmp;
         }
         modSrc = read;   // final prefix-sum texture
-        if (!scanChecked){
-          scanChecked = true;
-          gl.bindFramebuffer(gl.FRAMEBUFFER, read.fbo);
-          const st = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
-          console.log('scan FBO complete:', st === gl.FRAMEBUFFER_COMPLETE, 'status', st);
-          // read back one pixel near the right edge to see if the sum accumulated
-          const px = new Float32Array(4);
-          gl.readPixels(Math.min(read.w-1, read.w-2), Math.floor(read.h/2), 1, 1, gl.RGBA, gl.FLOAT, px);
-          console.log('sample integral value near right edge:', px[0], '(expect a large-ish number, not 0)');
-          gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        }
       }
 
       // oscillator: read the chosen source -> canvas
@@ -559,7 +614,6 @@ fullscreen: true
       gl.uniform1i(gl.getUniformLocation(progMain, 'src'), 0);
       gl.bindTexture(gl.TEXTURE_2D, modSrc.tex);
       gl.uniform1i(M.mode, mode);
-      gl.uniform1i(gl.getUniformLocation(progMain,'uDebug'), window.DBG ? 1 : 0);
       gl.uniform1f(M.freq, +el('freq').value);
       gl.uniform1f(M.depth, +el('depth').value);
       const elapsed = (performance.now() - t0) / 1000.0;
@@ -569,13 +623,25 @@ fullscreen: true
       gl.uniform1f(M.width, +el('width').value);
       gl.uniform1i(M.wave, +el('wave').value);
       pass(null);
+
+      // PiP: grayscale preview of the modulation source (blur + contrast applied)
+      if (el('pip-check').checked){
+        const pipW = Math.round(canvas.width / 4);
+        const pipH = Math.round(pipW * camH / camW);
+        // WebGL origin is bottom-left, so "top-left" visually = y offset of canvas.height - pipH
+        gl.viewport(0, canvas.height - pipH, pipW, pipH);
+        gl.useProgram(progGray);
+        gl.uniform1i(uGraySrc, 0);
+        gl.bindTexture(gl.TEXTURE_2D, result.tex);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+      }
     }
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
 
   // keep each range paired with its number field (two-way)
-  ['freq','depth','phase','scroll','duty','width','blur'].forEach(id => {
+  ['freq','depth','phase','scroll','duty','width','blur','contrast'].forEach(id => {
     const r = el(id), n = el(id + '-n');
     r.addEventListener('input', () => { n.value = r.value; });
     n.addEventListener('input', () => { r.value = n.value; });
@@ -589,6 +655,43 @@ fullscreen: true
   }
   el('wave').addEventListener('change', syncRows);
   syncRows();
+
+  // preset menu: populate from PRESETS array and apply on selection
+  const presetSel = el('preset');
+  PRESETS.forEach((p, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = p.name;
+    presetSel.appendChild(opt);
+  });
+
+  function applyPreset(p){
+    ['freq','depth','phase','scroll','blur','contrast'].forEach(id => {
+      if (p[id] !== undefined){
+        el(id).value = p[id];
+        el(id + '-n').value = p[id];
+      }
+    });
+    if (p.mode  !== undefined) el('mode').value  = p.mode;
+    if (p.wave  !== undefined){ el('wave').value  = p.wave;  syncRows(); }
+    if (p.duty  !== undefined){ el('duty').value  = p.duty;  el('duty-n').value  = p.duty;  }
+    if (p.width !== undefined){ el('width').value = p.width; el('width-n').value = p.width; }
+    el('preset-apply').disabled = true;
+  }
+
+  // re-enable the reset button whenever any control is touched after a preset is applied
+  el('panel').addEventListener('input', () => { el('preset-apply').disabled = false; });
+  el('panel').addEventListener('change', e => { if (e.target !== presetSel) el('preset-apply').disabled = false; });
+
+  presetSel.addEventListener('change', () => {
+    const p = PRESETS[+presetSel.value];
+    if (p && p.mode !== undefined) applyPreset(p);  // skip the placeholder (no mode key)
+  });
+
+  el('preset-apply').addEventListener('click', () => {
+    const p = PRESETS[+presetSel.value];
+    if (p && p.mode !== undefined) applyPreset(p);
+  });
 
   // collapse toggle
   const gui = el('gui'), toggle = el('toggle');
