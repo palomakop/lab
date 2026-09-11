@@ -9,6 +9,7 @@ fullscreen: true
   <div id="view">
     <canvas id="gl"></canvas>
     <p id="msg">requesting camera…</p>
+    <button id="capture" type="button">capture</button>
   </div>
 
   <section id="gui">
@@ -23,8 +24,8 @@ fullscreen: true
       </div>
       <label class="row">mode
         <select id="mode">
-          <option value="1">Phase Mod</option>
-          <option value="0">Frequency Mod</option>
+          <option value="1">phase mod</option>
+          <option value="0">frequency mod</option>
         </select>
       </label>
       <label>frequency
@@ -78,6 +79,7 @@ fullscreen: true
         <input type="checkbox" id="pip-check">
       </label>
       <div class="divider"></div>
+      <button id="cam-switch" type="button">switch camera</button>
       <button id="shot" type="button">save image</button>
       <a id="exit" href="/hallway">return to the hallway</a>
     </div>
@@ -101,6 +103,16 @@ fullscreen: true
     position:absolute; margin:0; padding:0 1ch;
     color:#f9f9f0; font-size:0.8rem; text-align:center;
   }
+
+  /* capture button: only visible when the panel is collapsed (else the panel's
+     own save button covers it). corner-placed to obscure minimal image. */
+  #capture {
+    position:absolute; left:1ch; bottom:1ch; display:none;
+    font:inherit; font-size:0.9em; color:#f9f9f0;
+    background:rgba(0,0,0,0.45); border:1.5px solid #f9f9f0;
+    border-radius:0.4rem; padding:0.6ch 1.4ch; cursor:pointer;
+  }
+  #app.controls-collapsed #capture { display:block; }
 
   /* gui: three.js-style, lab colors + font */
   #gui {
@@ -161,7 +173,7 @@ fullscreen: true
     appearance:auto; -webkit-appearance:auto;
   }
 
-  #shot {
+  #shot, #cam-switch {
     font:inherit; color:inherit;
     background:none; border:1.5px solid var(--fg-color);
     border-radius:0.4rem; padding:0.4ch 1ch; cursor:pointer; margin-top:0.4ch;
@@ -386,7 +398,10 @@ const PRESETS = [
   const progMain = program(fsrcMain);
   const progGray = program(fsrcGray);
 
-  const uGraySrc    = gl.getUniformLocation(progGray, 'src');
+  const uGraySrc      = gl.getUniformLocation(progGray, 'src');
+  const uLumaSrc      = gl.getUniformLocation(progLuma, 'src');
+  const uScanSrc      = gl.getUniformLocation(progScan, 'src');
+  const uMainSrc      = gl.getUniformLocation(progMain, 'src');
   const uScanOffset   = gl.getUniformLocation(progScan, 'offset');
   const uCopyContrast = gl.getUniformLocation(progCopy, 'uContrast');
   const uCopyInvert   = gl.getUniformLocation(progCopy, 'uInvert');
@@ -476,23 +491,45 @@ const PRESETS = [
   video.playsInline = true; video.muted = true;
   let camW = 1, camH = 1, ready = false;
 
-  // camera needs a secure context (https or localhost); warn if we're not in one
+  // camera state for switching between devices
+  let currentDeviceId = null;   // deviceId of the active camera (null = default)
+  let activeStream = null;      // so we can stop tracks before switching
+
+  // resize everything that depends on the camera's dimensions. called on first
+  // camera and again on every switch (a new camera may have a different aspect).
+  function onCameraReady(){
+    camW = video.videoWidth; camH = video.videoHeight;
+    // cap the longer dimension to TARGET_W so portrait cameras don't blow up in height
+    const scale = TARGET_W / Math.max(camW, camH);
+    canvas.width  = Math.round(camW * scale);
+    canvas.height = Math.round(camH * scale);
+    baseW = PROC_W;
+    baseH = Math.max(1, Math.round(PROC_W * camH / camW));
+    sizePyramid();
+    ready = true; msg.style.display = 'none';
+  }
+
+  // start (or restart) the camera. deviceId null = let the browser pick the default.
+  // explicit width/height forces a resolution negotiation, which also works around
+  // the macbook facetimehd driver's half-frame default.
+  function startCamera(deviceId){
+    const video_c = { width:{ideal:1280}, height:{ideal:720} };
+    if (deviceId) video_c.deviceId = { exact: deviceId };
+    return navigator.mediaDevices.getUserMedia({ video: video_c })
+      .then(stream => {
+        activeStream = stream;
+        currentDeviceId = stream.getVideoTracks()[0].getSettings().deviceId || deviceId || null;
+        video.srcObject = stream;
+        return video.play();
+      })
+      .then(onCameraReady);
+  }
+
+  // initial camera request
   if (!window.isSecureContext || !navigator.mediaDevices){
     msg.textContent = 'camera needs https (or localhost)';
   }
-  (navigator.mediaDevices?.getUserMedia({ video:true }) ?? Promise.reject())
-    .then(stream => { video.srcObject = stream; return video.play(); })
-    .then(() => {
-      camW = video.videoWidth; camH = video.videoHeight;
-      // cap the longer dimension to TARGET_W so portrait cameras don't blow up in height
-      const scale = TARGET_W / Math.max(camW, camH);
-      canvas.width  = Math.round(camW * scale);
-      canvas.height = Math.round(camH * scale);
-      baseW = PROC_W;
-      baseH = Math.max(1, Math.round(PROC_W * camH / camW));
-      sizePyramid();
-      ready = true; msg.style.display = 'none';
-    })
+  (navigator.mediaDevices ? startCamera(null) : Promise.reject())
     .catch(() => {
       msg.textContent = window.isSecureContext ? 'camera unavailable' : 'camera needs https (or localhost)';
     });
@@ -591,12 +628,12 @@ const PRESETS = [
         // FM: luma(result) -> scanA, then Hillis-Steele prefix sum along x
         gl.activeTexture(gl.TEXTURE0);
         gl.useProgram(progLuma);
-        gl.uniform1i(gl.getUniformLocation(progLuma, 'src'), 0);
+        gl.uniform1i(uLumaSrc, 0);
         gl.bindTexture(gl.TEXTURE_2D, result.tex);
         pass(scanA);
 
         gl.useProgram(progScan);
-        gl.uniform1i(gl.getUniformLocation(progScan, 'src'), 0);
+        gl.uniform1i(uScanSrc, 0);
         let read = scanA, write = scanB;
         const passes = Math.ceil(Math.log2(Math.max(2, baseW)));
         for (let i = 0; i < passes; i++){
@@ -611,7 +648,7 @@ const PRESETS = [
       // oscillator: read the chosen source -> canvas
       gl.useProgram(progMain);
       gl.activeTexture(gl.TEXTURE0);
-      gl.uniform1i(gl.getUniformLocation(progMain, 'src'), 0);
+      gl.uniform1i(uMainSrc, 0);
       gl.bindTexture(gl.TEXTURE_2D, modSrc.tex);
       gl.uniform1i(M.mode, mode);
       gl.uniform1f(M.freq, +el('freq').value);
@@ -656,6 +693,23 @@ const PRESETS = [
   el('wave').addEventListener('change', syncRows);
   syncRows();
 
+  // switch camera: enumerate first (so a just-plugged-in device is included),
+  // then advance to the next videoinput, stop the old stream, start the new one.
+  el('cam-switch').addEventListener('click', () => {
+    navigator.mediaDevices.enumerateDevices().then(devices => {
+      const cams = devices.filter(d => d.kind === 'videoinput');
+      if (cams.length < 2) return;   // nothing to switch to
+
+      // find where we are now, advance to the next (wrapping)
+      let idx = cams.findIndex(d => d.deviceId === currentDeviceId);
+      const next = cams[(idx + 1) % cams.length];
+
+      // stop the old stream so the device releases before we reopen
+      if (activeStream) activeStream.getTracks().forEach(t => t.stop());
+      startCamera(next.deviceId).catch(() => { msg.textContent = 'camera unavailable'; });
+    });
+  });
+
   // preset menu: populate from PRESETS array and apply on selection
   const presetSel = el('preset');
   PRESETS.forEach((p, i) => {
@@ -697,12 +751,13 @@ const PRESETS = [
   const gui = el('gui'), toggle = el('toggle');
   toggle.addEventListener('click', () => {
     const hidden = gui.classList.toggle('collapsed');
+    el('app').classList.toggle('controls-collapsed', hidden);
     toggle.textContent = hidden ? 'show controls' : 'hide controls';
     toggle.setAttribute('aria-expanded', String(!hidden));
   });
 
-  // save canvas as png
-  el('shot').addEventListener('click', () => {
+  // save canvas as png (shared by the panel button and the corner capture button)
+  function saveImage(){
     canvas.toBlob(b => {
       const a = document.createElement('a');
       a.href = URL.createObjectURL(b);
@@ -710,7 +765,9 @@ const PRESETS = [
       a.click();
       URL.revokeObjectURL(a.href);
     });
-  });
+  }
+  el('shot').addEventListener('click', saveImage);
+  el('capture').addEventListener('click', saveImage);
 })();
 </script>
 {% endraw %}
